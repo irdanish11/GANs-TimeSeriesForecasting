@@ -15,3 +15,5 @@ class GAN:
     def generator():
         gen = 5
     
+    def discriminator():
+        disc = 6
