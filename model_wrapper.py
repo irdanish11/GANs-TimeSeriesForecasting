@@ -6,3 +6,8 @@ Created on Tue Jun  9 20:20:44 2020
 """
 
 
+import tensorflow as tf
+
+class GAN:
+    def __init__(self, optimizer):
+        self.optimizer = optimizer
