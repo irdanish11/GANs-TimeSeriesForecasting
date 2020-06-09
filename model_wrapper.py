@@ -11,3 +11,7 @@ import tensorflow as tf
 class GAN:
     def __init__(self, optimizer):
         self.optimizer = optimizer
+        
+    def generator():
+        gen = 5
+    
