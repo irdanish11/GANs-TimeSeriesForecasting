@@ -1,0 +1,6 @@
+1. Warning on compiling discriminator with minimax_discriminator_loss:
+	WARNING:tensorflow:From C:\Users\danis\anaconda3\lib\site-packages\tensorflow\python\ops\nn_impl.py:180: 
+	add_dispatch_support.<locals>.wrapper (from tensorflow.python.ops.array_ops) is deprecated and will be removed
+	in a future version.
+	Instructions for updating:
+	Use tf.where in 2.0, which has the same broadcast rule as np.where
