@@ -120,8 +120,7 @@ class GAN:
         label_smoothing = self.disc_label_smoothing
         loss_collection = self.loss_collection
         reduction = self.reduction
-        with tf.name_scope('Discriminator_MiniMax_Loss', (Y_hat_real, Y_hat_fake, real_weights, gen_weights, 
-                                                          label_smoothing)) as scope:
+        with tf.name_scope('Discriminator_MiniMax_Loss') as scope:
       
           # -log((1 - label_smoothing) - sigmoid(D(x)))
           loss_on_real = tf.compat.v1.losses.sigmoid_cross_entropy(tf.ones_like(Y_hat_real), Y_hat_real, real_weights, 
@@ -178,15 +177,6 @@ class GAN:
                 #Discriminator output on fake data
                 Y_hat_fake = y_pred[2, 4]
             """
-            
-            #Discriminator output on real data
-            Y_hat_real = y_pred[0:2]
-            #Discriminator output on fake data
-            Y_hat_fake = y_pred[2, 4]
-            #Targets for real data, this should be like np.ones_like(Y_hat_real)
-            Y_real = y_true[0, 2]
-            #Targets for fake data, this should be like np.zeros_like(Y_hat_fake)
-            Y_fake = y_true[2, 4]
             #tf.split split the tensors and returns a list of two elements as 
             #[Targets for real data, Targets for fake data]
             Y_true =  tf.split(y_true, num_or_size_splits=2, axis=0)
