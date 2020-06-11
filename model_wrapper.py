@@ -76,6 +76,7 @@ class GAN:
         self.gen_loss = gen_loss
         self.gen_summary = kwargs.get('gen_summary', False)
         self.disc_summary = kwargs.get('disc_summary', False)
+        self.gan_summary = kwargs.get('gan_summary', True)
         self.gan_summary = kwargs.get('gan_summary', False)
         self.compile_gen = kwargs.get('compile_gen', False)
         self.disc_label_smoothing = kwargs.get('disc_label_smoothing', 0.25)
@@ -242,9 +243,23 @@ class GAN:
         discriminator.compile(loss=disc_loss, optimizer=self.optimizer)
         return discriminator
     
-    def get_gan_model(self):
+    def get_gan_model(self, gan_loss):
         generator = self.get_generator()
         discriminator = self.get_discriminator()
+        #Make the discriminator untrainable when we are training the generator.  
+        #This doesn't effect the discriminator by itself
+        discriminator.trainable = False
+        
+        #Combine the two models to create the GAN
+        gan_input = Input(shape=input_shape)
+        fake_data = generator(gan_input)
+        gan_output = discriminator(fake_data)
+        
+        gan = Model(gan_input, gan_output)
+        if self.gan_summary:
+            gan.summary()  
+        gan.compile(loss=gan_loss, optimizer=self.optimizer)
+        return gan
     
     def test(self):
         self.get_discriminator(self.discriminator_loss)
