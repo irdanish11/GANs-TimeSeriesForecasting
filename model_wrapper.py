@@ -147,16 +147,16 @@ class GAN:
       
         return loss
     
-    def discriminator_loss(y_true, y_pred):
+    def discriminator_loss(self, y_true, y_pred):
         """
         
 
         Parameters
         ----------
         y_true : TYPE
-            DESCRIPTION.
+            Targets or labels, half of length conatining ones and half of length containing zeros.
         y_pred : TYPE
-            DESCRIPTION.
+            Predictions by Discriminator.
 
         Returns
         -------
@@ -164,9 +164,19 @@ class GAN:
 
         """
         #Discriminator output on real data
-        Y_hat_real = y_true
+        Y_hat_real = y_pred[0:self.batch_size//2]
         #Discriminator output on fake data
-        Y_hat_fake = 
+        Y_hat_fake = y_pred[self.batch_size//2, self.batch_size]
+        #Targets for real data, this should be like np.ones_like(Y_hat_real)
+        Y_real = y_true[0:self.batch_size//2]
+        #Targets for fake data, this should be like np.zeros_like(Y_hat_fake)
+        Y_fake = y_true[self.batch_size//2, self.batch_size]
+        #constructing lists
+        Y_true =  [Y_real, Y_fake]
+        Y_pred =  [Y_hat_real, Y_hat_fake]
+        loss = self.minimax_discriminator_loss(Y_true, Y_pred, real_weights=1.0, 
+                                               gen_weights=1.0, summaries=False)
+        return  loss
     
     def get_generator(self):
         with tf.name_scope('Generator'):
@@ -229,5 +239,5 @@ gan = GAN(7, (1,7), Adam(), compile_gen=False, disc_summary=True, gen_summary=Tr
 gan.get_discriminator(5)        
 gan.get_generator()
 
-c = tf.constant([[1.0], [3.0]])
-d = c[0:1]
+c = tf.constant([[1.0], [3.0], [1.0], [3.0]])
+d = c[0:batch_size//2]
