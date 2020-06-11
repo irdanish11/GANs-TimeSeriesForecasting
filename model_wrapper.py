@@ -33,7 +33,7 @@ class GAN:
     None.
 
     """
-    def __init__(self, n_features, input_shape, optimizer, dropout=0.2, alpha=0.2, gen_loss=None, **kwargs):
+    def __init__(self, n_features, input_shape, batch_size, optimizer, dropout=0.2, alpha=0.2, gen_loss=None, **kwargs):
         """
         
 
@@ -163,20 +163,39 @@ class GAN:
         None.
 
         """
-        #Discriminator output on real data
-        Y_hat_real = y_pred[0:self.batch_size//2]
-        #Discriminator output on fake data
-        Y_hat_fake = y_pred[self.batch_size//2, self.batch_size]
-        #Targets for real data, this should be like np.ones_like(Y_hat_real)
-        Y_real = y_true[0:self.batch_size//2]
-        #Targets for fake data, this should be like np.zeros_like(Y_hat_fake)
-        Y_fake = y_true[self.batch_size//2, self.batch_size]
-        #constructing lists
-        Y_true =  [Y_real, Y_fake]
-        Y_pred =  [Y_hat_real, Y_hat_fake]
-        loss = self.minimax_discriminator_loss(Y_true, Y_pred, real_weights=1.0, 
-                                               gen_weights=1.0, summaries=False)
-        return  loss
+        with tf.compat.v1.variable_scope('Discriminator_Loss'):
+            """ 
+                tf.split() split the given tensors into two equal parts, pythonic slicing can't be used
+                here because the shape of the loss at compile time is dynamic e.g (?, probablity), so the
+                first axis is not determined and by using pythonic slicing it will generate.
+                ValueError: slice index 4 of dimension 1 out of bounds. for 'loss_2/dense_34_loss/
+                Discriminator_Loss/strided_slice_1' (op: 'StridedSlice') with input shapes: [?,1]
+                
+                Under the hood the thing that is happening can be visualized as:
+                    
+                #Discriminator output on real data
+                Y_hat_real = y_pred[0:2]
+                #Discriminator output on fake data
+                Y_hat_fake = y_pred[2, 4]
+            """
+            
+            #Discriminator output on real data
+            Y_hat_real = y_pred[0:2]
+            #Discriminator output on fake data
+            Y_hat_fake = y_pred[2, 4]
+            #Targets for real data, this should be like np.ones_like(Y_hat_real)
+            Y_real = y_true[0, 2]
+            #Targets for fake data, this should be like np.zeros_like(Y_hat_fake)
+            Y_fake = y_true[2, 4]
+            #tf.split split the tensors and returns a list of two elements as 
+            #[Targets for real data, Targets for fake data]
+            Y_true =  tf.split(y_true, num_or_size_splits=2, axis=0)
+            #tf.split split the tensors and returns a list of two elements as 
+            #[Discriminator output on real data, Discriminator output on fake data]
+            Y_pred = tf.split(y_pred, num_or_size_splits=2, axis=0)
+            loss = self.minimax_discriminator_loss(Y_true, Y_pred, real_weights=1.0, 
+                                                   gen_weights=1.0, summaries=False)
+            return  loss
     
     def get_generator(self):
         with tf.name_scope('Generator'):
@@ -230,14 +249,11 @@ class GAN:
         discriminator = Model(disc_input, fc)
         if self.disc_summary:
             discriminator.summary()
-        #discriminator.compile(loss=disc_loss, optimizer=self.optimizer)
+        discriminator.compile(loss=disc_loss, optimizer=self.optimizer)
         return discriminator
     
+    def test(self):
+        self.get_discriminator(self.discriminator_loss)
     
-gan = GAN(7, (1,7), Adam(), compile_gen=False, disc_summary=True, gen_summary=True)        
+    
 
-gan.get_discriminator(5)        
-gan.get_generator()
-
-c = tf.constant([[1.0], [3.0], [1.0], [3.0]])
-d = c[0:batch_size//2]
