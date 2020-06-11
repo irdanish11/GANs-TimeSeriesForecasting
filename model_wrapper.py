@@ -242,6 +242,10 @@ class GAN:
         discriminator.compile(loss=disc_loss, optimizer=self.optimizer)
         return discriminator
     
+    def get_gan_model(self):
+        generator = self.get_generator()
+        discriminator = self.get_discriminator()
+    
     def test(self):
         self.get_discriminator(self.discriminator_loss)
     
