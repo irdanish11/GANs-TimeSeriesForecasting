@@ -123,7 +123,7 @@ class GAN:
         label_smoothing = self.disc_label_smoothing
         loss_collection = self.loss_collection
         reduction = self.reduction
-        with tf.name_scope('Discriminator_MiniMax_Loss') as scope:
+        with tf.name_scope('Discriminator_MinMax_Loss') as scope:
       
           # -log((1 - label_smoothing) - sigmoid(D(x)))
           loss_on_real = tf.compat.v1.losses.sigmoid_cross_entropy(Y_real, Y_hat_real, real_weights, label_smoothing, 
@@ -144,18 +144,18 @@ class GAN:
     
     def discriminator_loss(self, y_true, y_pred):
         """
+        Creates a Keras type custom loss function for Discriminator MinMax Loss, to work with model.compile.
         
-
         Parameters
         ----------
-        y_true : TYPE
+        y_true : tensor
             Targets or labels, half of length conatining ones and half of length containing zeros.
-        y_pred : TYPE
+        y_pred : tensor
             Predictions by Discriminator.
 
         Returns
         -------
-        None.
+        A tensor having the same dimension as the ouptut of model.
 
         """
         with tf.compat.v1.variable_scope('Discriminator_Loss'):
@@ -182,6 +182,9 @@ class GAN:
             loss = self.minimax_discriminator_loss(Y_true, Y_pred, real_weights=1.0, gen_weights=1.0, 
                                                    summaries=False)
             return  loss
+    
+    def minmax_generator_loss(x_t1, x_t1_hat, Y_hat_fake):
+
     
     def get_generator(self):
         with tf.name_scope('Generator'):
@@ -213,8 +216,8 @@ class GAN:
 
         Returns
         -------
-        discriminator : TYPE
-            DESCRIPTION.
+        discriminator : object to the Model class.
+            Keras engine training Model object.
 
         """
         with tf.name_scope('Discriminator'):
@@ -238,7 +241,7 @@ class GAN:
         discriminator.compile(loss=disc_loss, optimizer=self.optimizer)
         return discriminator
     
-    def get_gan_model(self, gan_loss):
+    def get_gan_model(self):
         generator = self.get_generator()
         discriminator = self.get_discriminator()
         #Make the discriminator untrainable when we are training the generator.  
@@ -253,7 +256,7 @@ class GAN:
         gan = Model(gan_input, gan_output)
         if self.gan_summary:
             gan.summary()  
-        gan.compile(loss=gan_loss, optimizer=self.optimizer)
+        #gan.compile(loss=gan_loss, optimizer=self.optimizer)
         return gan
     
     def test(self):
