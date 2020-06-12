@@ -311,11 +311,23 @@ class GAN:
         if self.gan_summary:
             gan.summary()  
         #gan.compile(loss=gan_loss, optimizer=self.optimizer)
-        return gan
+        return generator, discriminator, gan
     
-    def train_GAN(self, X_train, epochs, batch_size):
-        #some code here
-        print()
+    def train_GAN(self):#, X_train, epochs, batch_size, batch_shape):
+        generator, discriminator, gan = self.get_gan_model()
+        generator.summary()
+        discriminator.summary()
+        gan.summary()
+        # steps_per_epoch = len(X_train)//batch_size
+        # for epoch in range(1, epochs+1):
+        #     bg = BatchGenerator(X_train, batch_size)
+        #     for batch in range(1, steps_per_epoch+1):
+        #         # X_reshaped is used data to get the output from generator model. X is the data in
+        #         # orignal dimensions e.g [batches,features], while X_reshaped is the data for LSTM 
+        #         # layer as LSTM layer 3D data so X_reshaped has dimensions [batches, timesteps, features]
+        #         X, X_reshaped = bg.get_nextBatch(batch_shape)
+                
+                
         
     
     def test(self):
