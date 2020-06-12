@@ -118,31 +118,26 @@ class GAN:
         """
         Y_hat_real = Y_pred[0]
         Y_hat_fake = Y_pred[1]
+        Y_real = Y_true[0]
+        Y_fake = Y_true[1]
         label_smoothing = self.disc_label_smoothing
         loss_collection = self.loss_collection
         reduction = self.reduction
         with tf.name_scope('Discriminator_MiniMax_Loss') as scope:
       
           # -log((1 - label_smoothing) - sigmoid(D(x)))
-          loss_on_real = tf.compat.v1.losses.sigmoid_cross_entropy(tf.ones_like(Y_hat_real), Y_hat_real, real_weights, 
-                                                                   label_smoothing, scope, reduction=reduction)
+          loss_on_real = tf.compat.v1.losses.sigmoid_cross_entropy(Y_real, Y_hat_real, real_weights, label_smoothing, 
+                                                                   scope, loss_collection=None, reduction=reduction)
           # -log(- sigmoid(D(G(x))))
-          loss_on_generated = tf.compat.v1.losses.sigmoid_cross_entropy(
-              tf.zeros_like(Y_hat_fake),
-              Y_hat_fake,
-              gen_weights,
-              scope=scope,
-              loss_collection=None,
-              reduction=reduction)
+          loss_on_generated = tf.compat.v1.losses.sigmoid_cross_entropy(Y_fake, Y_hat_fake, gen_weights, scope,
+                                                                        loss_collection=None, reduction=reduction)
       
           loss = loss_on_real + loss_on_generated
           tf.compat.v1.losses.add_loss(loss, loss_collection)
       
           if summaries:
-            tf.compat.v1.summary.scalar('discriminator_gen_minimax_loss',
-                                        loss_on_generated)
-            tf.compat.v1.summary.scalar('discriminator_real_minimax_loss',
-                                        loss_on_real)
+            tf.compat.v1.summary.scalar('discriminator_gen_minimax_loss', loss_on_generated)
+            tf.compat.v1.summary.scalar('discriminator_real_minimax_loss', loss_on_real)
             tf.compat.v1.summary.scalar('discriminator_minimax_loss', loss)
       
         return loss
@@ -184,8 +179,8 @@ class GAN:
             #tf.split split the tensors and returns a list of two elements as 
             #[Discriminator output on real data, Discriminator output on fake data]
             Y_pred = tf.split(y_pred, num_or_size_splits=2, axis=0)
-            loss = self.minimax_discriminator_loss(Y_true, Y_pred, real_weights=1.0, 
-                                                   gen_weights=1.0, summaries=False)
+            loss = self.minimax_discriminator_loss(Y_true, Y_pred, real_weights=1.0, gen_weights=1.0, 
+                                                   summaries=False)
             return  loss
     
     def get_generator(self):
