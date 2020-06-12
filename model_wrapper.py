@@ -231,7 +231,7 @@ class GAN:
             
             
     
-    def get_generator(self):
+    def get_generator(self, name):
         """
         
 
@@ -255,7 +255,7 @@ class GAN:
             fc = Dense(units=self.n_features)(lstm)
             fc = LeakyReLU(alpha=self.aplha)(fc)
             
-        generator = Model(inputs=gen_input, outputs=fc)
+        generator = Model(inputs=gen_input, outputs=fc, name=name)
         if self.gen_summary:
             generator.summary()
         if self.compile_gen:
@@ -264,7 +264,7 @@ class GAN:
             generator.compile(loss=self.gen_loss, optimizer=self.optimizer)
         return generator 
     
-    def get_discriminator(self, disc_loss):
+    def get_discriminator(self, disc_loss, name):
         """
         Creates the discriminator Model as mentioned in `Stock Market Prediction Based on Generative Adversarial Network <https://doi.org/10.1016/j.procs.2019.01.256>`_
 
@@ -289,15 +289,15 @@ class GAN:
             #output layer
             fc = Dense(units=1, activation='sigmoid')(h3)
         
-        discriminator = Model(disc_input, fc)
+        discriminator = Model(disc_input, fc, name=name)
         if self.disc_summary:
             discriminator.summary()
         discriminator.compile(loss=disc_loss, optimizer=self.optimizer)
         return discriminator
     
-    def get_gan_model(self):
-        generator = self.get_generator()
-        discriminator = self.get_discriminator()
+    def get_gan_model(self, name):
+        generator = self.get_generator(name='Generator')
+        discriminator = self.get_discriminator(self.discriminator_loss, name='Discriminator')
         #Make the discriminator untrainable when we are training the generator.  
         #This doesn't effect the discriminator by itself
         discriminator.trainable = False
@@ -307,17 +307,15 @@ class GAN:
         fake_data = generator(gan_input)
         gan_output = discriminator(fake_data)
         
-        gan = Model(gan_input, gan_output)
+        gan = Model(gan_input, gan_output, name=name)
         if self.gan_summary:
             gan.summary()  
         #gan.compile(loss=gan_loss, optimizer=self.optimizer)
         return generator, discriminator, gan
     
-    def train_GAN(self):#, X_train, epochs, batch_size, batch_shape):
-        generator, discriminator, gan = self.get_gan_model()
-        generator.summary()
-        discriminator.summary()
-        gan.summary()
+    def train_GAN(self, X_train, epochs, batch_size, batch_shape, name, gan_summary=False):
+        generator, discriminator, gan_model = self.get_gan_model(name)
+        gan_model.summary()
         # steps_per_epoch = len(X_train)//batch_size
         # for epoch in range(1, epochs+1):
         #     bg = BatchGenerator(X_train, batch_size)
