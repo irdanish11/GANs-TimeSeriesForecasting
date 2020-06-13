@@ -322,12 +322,19 @@ class GAN:
             #For info regarding model.predict(X) and model(X) see: https://stackoverflow.com/questions/60159714/when-to-use-model-predictx-vs-modelx-in-tensorflow 
             #Prediction of GAN as whole model, where discrminator is non trainable.
             Y_hat_gan = gan(X_fake) 
-            #Generating targets for GAN, here we are giving ones because we want our generator to 
-            #generate data that looks like real.
-            Y_gan = tf.ones_like(Y_hat_gan)
             #Computing G_loss
-            G_loss = self.minmax_generator_loss(x_t1, x_t1_hat, Y_hat_fake, lambda1=1.0, lambda2=1.0, summaries=True)
+            G_loss = self.minmax_generator_loss(x_t1, x_t1_hat, Y_hat_gan, lambda1=1.0, lambda2=1.0, summaries=True)
+            self.history_batch['Gen_Loss'].append(G_loss)
+            #computing the accuracy
+            acc = tf.keras.metrics.Accuracy()
+            _ = acc.update_state(tf.ones_like(Y_hat_gan), Y_hat_gan)
+            G_acc = acc.result().numpy()
+            self.history_batch['Gen_Acc'].append(G_acc)
+            #Reset the states of metrics
+            acc.reset_states()
             
+        #calculate gardients
+        
             
         
     
