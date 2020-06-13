@@ -25,7 +25,7 @@ class BatchGenerator:
         self.counter += self.batch_size
         return batch, batch_reshaped, batch_t_plus1
     
-    def get_disc_data(generator, X, X_reshaped, x_t1):
+    def get_disc_gan_data(generator, X, X_reshaped, x_t1):
         #prediction of generator x_t1_hat given x_t
         x_t1_hat = generator.predict(X_reshaped)
         #we concatenate X={x1....xt} & x_t1_hat to get {x1....xt, x_t1_hat} as fake data X_fake
@@ -36,5 +36,5 @@ class BatchGenerator:
         X_disc = tf.concat([X_real,X_fake], axis=0, name='Disc_X_Concat')
         #Generating targets for discriminator, 1s for real and 0s for fake.
         Y_disc = tf.concat([tf.ones_like(X_real), tf.zeros_like(X_fake)], axis=0, name='Disc_Y_Concat')
-        return X_disc, Y_disc
+        return X_disc, Y_disc, X_fake
     

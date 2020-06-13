@@ -292,7 +292,7 @@ class GAN:
         discriminator = Model(disc_input, fc, name=name)
         if self.disc_summary:
             discriminator.summary()
-        discriminator.compile(loss=disc_loss, optimizer=self.optimizer)
+        discriminator.compile(loss=disc_loss, optimizer=self.optimizer, metrics=['accuracy'])
         return discriminator
     
     def get_gan_model(self, name):
@@ -313,11 +313,20 @@ class GAN:
         #gan.compile(loss=gan_loss, optimizer=self.optimizer)
         return generator, discriminator, gan
     
+    def train_generator(self, generator, gan, X_reshaped, x_t1, X_fake):
+        with tf.GradientTape() as tape:
+            #prediction of generator x_t1_hat given x_t
+            x_t1_hat = generator.predict(X_reshaped)
+            #For info regarding model.predict(X) and model(X) see: https://stackoverflow.com/questions/60159714/when-to-use-model-predictx-vs-modelx-in-tensorflow 
+            Y_hat_gan = gan() 
+            
+        
+    
     def train_GAN(self, X_train, epochs, batch_size, batch_shape, name, gan_summary=False):
         generator, discriminator, gan_model = self.get_gan_model(name)
         gan_model.summary()
         steps_per_epoch = len(X_train)//batch_size
-        history_epoch = {'Disc_Loss':[], 'Disc_Accuracy':[], 'Gen_Loss':[], 'Gen_Acc':[]}
+        history_epoch = {'Disc_Loss':[], 'Disc_Accuracy':[], 'Gen_Loss':[], 'Gen_Acc':[], 'Batch_Data':[]}
         for epoch in range(1, epochs+1):
             history_batch = {'Disc_Loss':[], 'Disc_Accuracy':[], 'Gen_Loss':[], 'Gen_Acc':[]}
             bg = BatchGenerator(X_train, batch_size=32)
@@ -327,7 +336,14 @@ class GAN:
                 # layer as LSTM layer 3D data so X_reshaped has dimensions [batches, timesteps, features]
                 #whereas x_t1 is the data at time t+1 or next batch
                 X, X_reshaped, x_t1 = bg.get_nextBatch(batch_shape)
-                
+                #Getting the data for discrimnator training.
+                X_disc, Y_disc, X_fake = bg.get_disc_gan_data(generator, X, X_reshaped, x_t1)
+                #train discriminator
+                metrics = discriminator.train_on_batch(X_disc, Y_disc)
+                history_batch['Disc_Loss'].append(metrics[0])
+                history_batch['Disc_Accuracy'].append(metrics[1])
+                    
+
                 
     
     def test(self):
