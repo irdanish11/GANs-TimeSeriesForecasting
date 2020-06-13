@@ -334,7 +334,9 @@ class GAN:
             acc.reset_states()
             
         #calculate gardients
-        
+        gan_gradients = tape.gradient(G_loss, gan.trainable_variables)
+        #Apply gradients
+        self.optimizer.apply_gradients(zip(gan_gradients, gan.trainable_variables))
             
         
     
