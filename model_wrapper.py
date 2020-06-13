@@ -358,7 +358,10 @@ class GAN:
                 metrics = discriminator.train_on_batch(X_disc, Y_disc)
                 self.history_batch['Disc_Loss'].append(metrics[0])
                 self.history_batch['Disc_Accuracy'].append(metrics[1])
-                    
+                #train generator
+                self.train_generator(generator, gan, X_reshaped, x_t1, X_fake)
+            #computing loss over one epoch
+            self.history_epoch['Disc_Loss'].append(sum(self.history_batch['Disc_Loss']/steps_per_epoch))
 
                 
     
