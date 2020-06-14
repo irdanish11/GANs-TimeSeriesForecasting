@@ -12,6 +12,7 @@ from tensorflow.keras.layers import LeakyReLU
 from tensorflow.keras.models import Model
 from DataGenerator import BatchGenerator
 from utilities import PrintInline, Timer
+import os
 
 input_shape = (1,7)
 
@@ -78,6 +79,10 @@ class GAN:
         self.history_batch = {'Disc_Loss':[], 'Disc_Acc':[], 'Gen_Loss':[], 'Gen_Acc':[], 'Batch_Data':[]}
         self.time_remain = 0
         self.time_taken = 0
+        #Callback variables
+        self.disc_metric=None
+        self.gen_metric=None
+        #Keyword variables
         self.gen_summary = kwargs.get('gen_summary', False)
         self.disc_summary = kwargs.get('disc_summary', False)
         self.gan_summary = kwargs.get('gan_summary', True)
@@ -341,7 +346,7 @@ class GAN:
         #Apply gradients
         self.optimizer.apply_gradients(zip(gan_gradients, gan.trainable_variables))
             
-    def info_out(self, which, epoch=None, epochs=None, batch=None, steps_per_epoch=None, time_epoch=None):
+    def info_out(self, which, epoch=None, epochs=None, batch=None, steps_per_epoch=None):
         if which.lower()=='batch':
             str1 =  'Epoch {0}/{1}, Batch {2}/{3}, - '.format(epoch, epochs, batch, steps_per_epoch)
             str2 = 'Time Taken By 1 Batch: {0:.2} sec. - Est Time Remaining: {1}, - '.format(self.time_taken, self.time_remain)
@@ -351,15 +356,72 @@ class GAN:
                                                                                   self.history_batch['Gen_Acc'])
             PrintInline(str1+str2+str3+str4)
         elif which.lower()=='epoch':
-            print()
+            str3 = 'Discriminator Loss: {0:.5}, - Discriminator Accuracy: {1:.3} - '.format(self.history_epoch['Disc_Loss'], 
+                                                                                            self.history_epoch['Disc_Acc'])
+            str4 = 'Generator Loss: {0:.5}, - Generator Accuracy: {1:.3}.'.format(self.history_epoch['Gen_Loss'], 
+                                                                                  self.history_epoch['Gen_Acc'])
+            print('\nEpoch Completed, ' + str1 + str2)
         else:
             raise ValueError('Invalid value given to `which`, it can be either `batch` or `epoch`!')
-          
-            
-            
-            
     
-    def train_GAN(self, X_train, epochs, batch_size, batch_shape, name, gan_summary=False):
+    def ckpt_callback(self, epoch, models, path, metric_disc='loss', metric_gen='loss', save_best_only=True):
+        if type(models)!= list:
+            raise TypeError('Invalid value given to models it should be a list containing three models in this order: [generator, discriminator, gan_model]')
+        os.makedirs(path, exist_ok=True)
+        def save_disc(models, path):
+            models[1].save(path+'/Discriminator.h5')
+        def save_gen(models, path):
+            models[0].save(path+'/Generator.h5')
+            models[2].save(path+'/GAN_Model.h5')
+            
+        if save_best_only:
+            #intializaing metric value
+            if metric_disc=='loss' and metric_gen=='loss':
+                if epoch==1:
+                    self.disc_metric = 1000.0
+                    self.gen_metric = 1000.0
+                #Checking for improvements
+                if self.history_batch['Disc_Loss'] < self.disc_metric:
+                    save_disc(models, path)
+                if self.history_batch['Gen_Loss'] < self.gen_metric:
+                    save_gen(models, path)
+                    
+            elif metric_disc=='accuracy' and metric_gen=='accuracy':
+                if epoch==1:
+                    self.disc_metric = 0.0
+                    self.gen_metric = 0.0
+                #Checking for improvements
+                if self.history_batch['Disc_Acc'] > self.disc_metric:
+                    save_disc(models, path)
+                if self.history_batch['Gen_Acc'] > self.gen_metric:
+                    save_gen(models, path)
+                    
+            elif metric_disc=='loss' and metric_gen=='accuracy':
+                if epoch==1:
+                    self.disc_metric = 1000.0
+                    self.gen_metric = 0.0
+                #Checking for improvements
+                if self.history_batch['Disc_Loss'] < self.disc_metric:
+                    save_disc(models, path)
+                if self.history_batch['Gen_Acc'] < self.gen_metric:
+                    save_gen(models, path)
+                    
+            elif metric_disc=='accuracy' and metric_gen=='loss':
+                if epoch==1:
+                    self.disc_metric = 0.0
+                    self.gen_metric = 1000.0
+                #Checking for improvements
+                if self.history_batch['Disc_Acc'] < self.disc_metric:
+                    save_disc(models, path)
+                if self.history_batch['Gen_Loss'] < self.gen_metric:
+                    save_gen(models, path)
+        else:
+            save_disc(models, path)
+            save_gen(models, path)
+        
+
+    def train_GAN(self, X_train, epochs, batch_size, batch_shape, name, gan_summary=False, tb_path='./Tensorboard'):
+        
         generator, discriminator, gan_model = self.get_gan_model(name)
         if gan_summary:
             gan_model.summary()
@@ -367,8 +429,7 @@ class GAN:
         #setting up timer class
         time =Timer()
         for epoch in range(1, epochs+1):
-            bg = BatchGenerator(X_train, batch_size=32)
-            time_epoch = []
+            bg = BatchGenerator(X_train, batch_size=batch_size)
             for batch in range(1, steps_per_epoch):
                 #start the timer
                 time.start()
@@ -379,7 +440,7 @@ class GAN:
                 X, X_reshaped, x_t1 = bg.get_nextBatch(batch_shape)
                 #Getting the data for discrimnator training.
                 X_disc, Y_disc, X_fake = bg.get_disc_gan_data(generator, X, X_reshaped, x_t1)
-                #train discriminator
+                """ train discriminator """
                 metrics = discriminator.train_on_batch(X_disc, Y_disc)
                 self.history_batch['Disc_Loss'].append(metrics[0])
                 self.history_batch['Disc_Acc'].append(metrics[1])
@@ -387,19 +448,15 @@ class GAN:
                 self.train_generator(generator, gan_model, X_reshaped, x_t1, X_fake)
                 #Getting total time taken by a batch
                 self.time_remain, self.time_taken = time.get_time_hhmmss(steps_per_epoch-batch)
-                time_epoch.append(self.time_taken)
-                self.info_out(which='batch', epoch, epochs, batch, steps_per_epoch)
+                self.info_out('batch', epoch, epochs, batch, steps_per_epoch)
                 
             #computing loss & accuracy over one epoch
             self.history_epoch['Disc_Loss'].append(sum(self.history_batch['Disc_Loss']/steps_per_epoch))
             self.history_epoch['Disc_Acc'].append(sum(self.history_batch['Disc_Acc']/steps_per_epoch))
             self.history_epoch['Gen_Loss'].append(sum(self.history_batch['Gen_Loss']/steps_per_epoch))
             self.history_epoch['Gen_Acc'].append(sum(self.history_batch['Gen_Acc']/steps_per_epoch))
+            self.history_epoch['Batch_Data'].append(self.history_batch)
+            self.info_out(which='epoch')
+            self.ckpt_callback(epoch, [generator, discriminator, gan_model], path='checkpoints')
 
-                
-    
-    def test(self):
-        self.get_discriminator(self.discriminator_loss)
-    
-    
-
+            
