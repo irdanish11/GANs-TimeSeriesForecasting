@@ -248,7 +248,9 @@ class GAN:
             
         generator = Model(inputs=gen_input, outputs=fc, name=name)
         if self.gen_summary:
+            print('\n')
             generator.summary()
+            print('\n\n')
         if self.compile_gen:
             if self.gen_loss is None:
                 raise TypeError('gen_loss can not be None, when kwargs["compile_gen"] is True. Provide valid keras loss function string')
@@ -283,6 +285,7 @@ class GAN:
         discriminator = Model(disc_input, fc, name=name)
         if self.disc_summary:
             discriminator.summary()
+            print('\n\n')
         discriminator.compile(loss=disc_loss, optimizer=self.optimizer, metrics=['accuracy'])
         return discriminator
     
@@ -340,7 +343,7 @@ class GAN:
                                                                                             self.history_epoch['Disc_Acc'][epoch-1])
             str2 = 'Generator Loss: {0:.5}, - Generator Accuracy: {1:.3}.'.format(self.history_epoch['Gen_Loss'][epoch-1], 
                                                                                   self.history_epoch['Gen_Acc'][epoch-1])
-            print('\nEpoch Completed, Total Time Taken: ' + total_time + str1 + str2)
+            print('\nEpoch Completed, Total Time Taken: ' + total_time + ', - ' + str1 + str2)
             print('\t\t\t________________________________________________________\n')
         else:
             raise ValueError('Invalid value given to `which`, it can be either `batch` or `epoch`!')
@@ -430,8 +433,9 @@ class GAN:
         generator, discriminator, gan_model = self.get_gan_model(name)
         if gan_summary:
             gan_model.summary()
+            print('Note: In the GAN(combined model) Discriminator parameters are set to non-trainable because while training Generator, we do not train Discriminator!')
         steps_per_epoch = len(X_train)//batch_size
-        chk = input('\n\nAre you read to start training y/N: ')
+        chk = input('\n\nStart training y/N: ')
         if chk.lower()=='y':
             for epoch in range(1, epochs+1):
                 #setting up timer class
