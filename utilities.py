@@ -13,20 +13,27 @@ import  tensorflow as tf
 class Timer:
     def __init__(self):
         self.begin = 0
+        self.total_time=0
     def restart(self):
         self.begin = time.time()
     def start(self):
         self.begin = time.time()
+    def time_converter(self, time):
+        m, s = divmod(time, 60)
+        h, m = divmod(m, 60)
+        return "%02d:%02d:%02d" % (h, m, s)
+    
     def get_time_hhmmss(self, rem_batches):
         end = time.time()
         time_taken = end - self.begin
         reamin_time = time_taken*rem_batches
-        #print('reamin time: '+str(reamin_time)+' Reamin Batches: '+str(rem_batches)+' Time Taken: '+str(time_taken))
-        m, s = divmod(reamin_time, 60)
-        h, m = divmod(m, 60)
-        time_str = "%02d:%02d:%02d" % (h, m, s)
+        time_str = self.time_converter(reamin_time)
+        self.total_time += time_taken
         return time_str, time_taken
+    def get_total_time(self):
+        return self.time_converter(self.total_time)
     
+#some utility methods    
 def PrintInline(string):
     sys.stdout.write('\r'+string)
     sys.stdout.flush() 

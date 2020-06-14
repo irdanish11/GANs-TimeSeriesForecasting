@@ -68,8 +68,6 @@ class GAN:
         #Keyword variables
         self.gen_summary = kwargs.get('gen_summary', False)
         self.disc_summary = kwargs.get('disc_summary', False)
-        self.gan_summary = kwargs.get('gan_summary', True)
-        self.gan_summary = kwargs.get('gan_summary', False)
         self.compile_gen = kwargs.get('compile_gen', False)
         self.label_smoothing = kwargs.get('label_smoothing', 0.25)
         self.loss_collection = kwargs.get('loss_collection', tf.compat.v1.GraphKeys.LOSSES)
@@ -301,8 +299,7 @@ class GAN:
         gan_output = discriminator(fake_data)
         
         gan = Model(gan_input, gan_output, name=name)
-        if self.gan_summary:
-            gan.summary()  
+        #No model compilation because training is done using GradientTape
         #gan.compile(loss=gan_loss, optimizer=self.optimizer)
         return generator, discriminator, gan
     
@@ -329,7 +326,7 @@ class GAN:
         #Apply gradients
         self.optimizer.apply_gradients(zip(gan_gradients, gan.trainable_variables))
             
-    def info_out(self, which, epoch=None, epochs=None, batch=None, steps_per_epoch=None):
+    def info_out(self, which, epoch=None, epochs=None, batch=None, steps_per_epoch=None, total_time=None):
         if which.lower()=='batch':
             str1 =  'Epoch {0}/{1}, Batch {2}/{3}, - '.format(epoch, epochs, batch, steps_per_epoch-1)
             str2 = 'Time Taken By 1 Batch: {0:.2} sec. - Est Time Remaining: {1}, - '.format(self.time_taken, self.time_remain)
@@ -343,7 +340,7 @@ class GAN:
                                                                                             self.history_epoch['Disc_Acc'][epoch-1])
             str2 = 'Generator Loss: {0:.5}, - Generator Accuracy: {1:.3}.'.format(self.history_epoch['Gen_Loss'][epoch-1], 
                                                                                   self.history_epoch['Gen_Acc'][epoch-1])
-            print('\nEpoch Completed, ' + str1 + str2)
+            print('\nEpoch Completed, Total Time Taken: ' + total_time + str1 + str2)
             print('\t\t\t________________________________________________________\n')
         else:
             raise ValueError('Invalid value given to `which`, it can be either `batch` or `epoch`!')
@@ -434,38 +431,41 @@ class GAN:
         if gan_summary:
             gan_model.summary()
         steps_per_epoch = len(X_train)//batch_size
-        #setting up timer class
-        time =Timer()
-        for epoch in range(1, epochs+1):
-            bg = BatchGenerator(X_train, batch_size=batch_size)
-            for batch in range(1, steps_per_epoch):
-                #start the timer
-                time.start()
-                # X_reshaped is used data to get the output from generator model. X is the data in
-                # orignal dimensions e.g [batches,features], while X_reshaped is the data for LSTM 
-                # layer as LSTM layer 3D data so X_reshaped has dimensions [batches, timesteps, features]
-                #whereas x_t1 is the data at time t+1 or next batch
-                X, X_reshaped, x_t1 = bg.get_nextBatch(batch_shape)
-                #Getting the data for discrimnator training.
-                X_disc, Y_disc, X_fake = bg.get_disc_gan_data(generator, X, X_reshaped, x_t1)
-                """ train discriminator """
-                
-                metrics = discriminator.train_on_batch(X_disc, Y_disc)
-                self.history_batch['Disc_Loss'].append(metrics[0])
-                self.history_batch['Disc_Acc'].append(metrics[1])
-                #train generator
-                self.train_generator(generator, gan_model, X_reshaped, x_t1, X_fake)
-                #Getting total time taken by a batch
-                self.time_remain, self.time_taken = time.get_time_hhmmss(steps_per_epoch-batch)
-                self.info_out('batch', epoch, epochs, batch, steps_per_epoch)
-                
-            #computing loss & accuracy over one epoch
-            self.history_epoch['Disc_Loss'].append(sum(self.history_batch['Disc_Loss'])/steps_per_epoch)
-            self.history_epoch['Disc_Acc'].append(sum(self.history_batch['Disc_Acc'])/steps_per_epoch)
-            self.history_epoch['Gen_Loss'].append(sum(self.history_batch['Gen_Loss'])/steps_per_epoch)
-            self.history_epoch['Gen_Acc'].append(sum(self.history_batch['Gen_Acc'])/steps_per_epoch)
-            self.history_epoch['Batch_Data'].append(self.history_batch)
-            self.info_out(which='epoch', epoch=epoch)
-            self.ckpt_callback(epoch, [generator, discriminator, gan_model])
-
+        chk = input('\n\nAre you read to start training y/N: ')
+        if chk.lower()=='y':
+            for epoch in range(1, epochs+1):
+                #setting up timer class
+                time =Timer()
+                bg = BatchGenerator(X_train, batch_size=batch_size)
+                for batch in range(1, steps_per_epoch):
+                    #start the timer
+                    time.start()
+                    # X_reshaped is used data to get the output from generator model. X is the data in
+                    # orignal dimensions e.g [batches,features], while X_reshaped is the data for LSTM 
+                    # layer as LSTM layer 3D data so X_reshaped has dimensions [batches, timesteps, features]
+                    #whereas x_t1 is the data at time t+1 or next batch
+                    X, X_reshaped, x_t1 = bg.get_nextBatch(batch_shape)
+                    #Getting the data for discrimnator training.
+                    X_disc, Y_disc, X_fake = bg.get_disc_gan_data(generator, X, X_reshaped, x_t1)
+                    """ train discriminator """
+                    
+                    metrics = discriminator.train_on_batch(X_disc, Y_disc)
+                    self.history_batch['Disc_Loss'].append(metrics[0])
+                    self.history_batch['Disc_Acc'].append(metrics[1])
+                    #train generator
+                    self.train_generator(generator, gan_model, X_reshaped, x_t1, X_fake)
+                    #Getting total time taken by a batch
+                    self.time_remain, self.time_taken = time.get_time_hhmmss(steps_per_epoch-batch)
+                    self.info_out('batch', epoch, epochs, batch, steps_per_epoch)
+                    
+                #computing loss & accuracy over one epoch
+                self.history_epoch['Disc_Loss'].append(sum(self.history_batch['Disc_Loss'])/steps_per_epoch)
+                self.history_epoch['Disc_Acc'].append(sum(self.history_batch['Disc_Acc'])/steps_per_epoch)
+                self.history_epoch['Gen_Loss'].append(sum(self.history_batch['Gen_Loss'])/steps_per_epoch)
+                self.history_epoch['Gen_Acc'].append(sum(self.history_batch['Gen_Acc'])/steps_per_epoch)
+                self.history_epoch['Batch_Data'].append(self.history_batch)
+                self.info_out(which='epoch', epoch=epoch, total_time=time.get_total_time())
+                self.ckpt_callback(epoch, [generator, discriminator, gan_model])
+        elif chk.lower()=='n':
+            SystemExit
         return self.history_epoch
