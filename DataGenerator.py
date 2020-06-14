@@ -37,9 +37,8 @@ class BatchGenerator:
         X_disc = tf.concat([X_real,X_fake], axis=0, name='Disc_X_Concat')
         #Generating targets for discriminator, 1s for real and 0s for fake.
         samples = X_disc.get_shape().as_list()[0]#total number of samples in a batch for the discriminator
-        Y_disc = tf.concat([tf.ones((samples, 1)), tf.zeros((samples, 1))], axis=0, name='Disc_Y_Concat')
+        Y_disc = tf.concat([tf.ones((samples//2, 1)), tf.zeros((samples//2, 1))], axis=0, name='Disc_Y_Concat')
         #Reshape the X_fake for the input of GAN as [batch_size, time_step, features]
         X_fake = tf.expand_dims(X_fake, axis=1)
-        print(X_disc.get_shape().as_list(), Y_disc.get_shape().as_list(), X_fake.get_shape().as_list())
         return X_disc, Y_disc, X_fake
     

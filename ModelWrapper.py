@@ -209,7 +209,7 @@ class GAN:
             #that is why we change the parameter passing order below
             g_mse = tf.compat.v1.losses.mean_squared_error(labels=x_t1_hat, predictions=x_t1, scope=scope,
                                                            loss_collection=None, reduction=reduction)
-            g_loss = tf.compat.v1.losses.sigmoid_cross_entropy(tf.ones_like(Y_hat_gan), Y_hat_gan, scope,
+            g_loss = tf.compat.v1.losses.sigmoid_cross_entropy(tf.ones_like(Y_hat_gan), Y_hat_gan, scope=scope,
                                                                loss_collection=None, reduction=reduction)
             #GAN loss
             G_loss = (lambda1*g_mse) + (lambda2*g_loss)
@@ -317,7 +317,7 @@ class GAN:
             G_loss = self.minmax_generator_loss(x_t1, x_t1_hat, Y_hat_gan, lambda1=1.0, lambda2=1.0, summaries=True)
             self.history_batch['Gen_Loss'].append(G_loss)
             #computing the accuracy
-            acc = tf.keras.metrics.Accuracy()
+            acc = tf.keras.metrics.BinaryAccuracy(name='binary_accuracy', threshold=0.5)
             _ = acc.update_state(tf.ones_like(Y_hat_gan), Y_hat_gan)
             G_acc = acc.result().numpy()
             self.history_batch['Gen_Acc'].append(G_acc)
@@ -331,19 +331,20 @@ class GAN:
             
     def info_out(self, which, epoch=None, epochs=None, batch=None, steps_per_epoch=None):
         if which.lower()=='batch':
-            str1 =  'Epoch {0}/{1}, Batch {2}/{3}, - '.format(epoch, epochs, batch, steps_per_epoch)
+            str1 =  'Epoch {0}/{1}, Batch {2}/{3}, - '.format(epoch, epochs, batch, steps_per_epoch-1)
             str2 = 'Time Taken By 1 Batch: {0:.2} sec. - Est Time Remaining: {1}, - '.format(self.time_taken, self.time_remain)
-            str3 = 'Discriminator Loss: {0:.5}, - Discriminator Accuracy: {1:.3} - '.format(self.history_batch['Disc_Loss'], 
-                                                                                            self.history_batch['Disc_Acc'])
-            str4 = 'Generator Loss: {0:.5}, - Generator Accuracy: {1:.3}.'.format(self.history_batch['Gen_Loss'], 
-                                                                                  self.history_batch['Gen_Acc'])
+            str3 = 'Discriminator Loss: {0:.5}, - Discriminator Accuracy: {1:.3} - '.format(self.history_batch['Disc_Loss'][batch-1], 
+                                                                                            self.history_batch['Disc_Acc'][batch-1])
+            str4 = 'Generator Loss: {0:.5}, - Generator Accuracy: {1:.3}.'.format(self.history_batch['Gen_Loss'][batch-1], 
+                                                                                  self.history_batch['Gen_Acc'][batch-1])
             PrintInline(str1+str2+str3+str4)
         elif which.lower()=='epoch':
-            str3 = 'Discriminator Loss: {0:.5}, - Discriminator Accuracy: {1:.3} - '.format(self.history_epoch['Disc_Loss'], 
-                                                                                            self.history_epoch['Disc_Acc'])
-            str4 = 'Generator Loss: {0:.5}, - Generator Accuracy: {1:.3}.'.format(self.history_epoch['Gen_Loss'], 
-                                                                                  self.history_epoch['Gen_Acc'])
+            str1 = 'Discriminator Loss: {0:.5}, - Discriminator Accuracy: {1:.3} - '.format(self.history_epoch['Disc_Loss'][epoch-1], 
+                                                                                            self.history_epoch['Disc_Acc'][epoch-1])
+            str2 = 'Generator Loss: {0:.5}, - Generator Accuracy: {1:.3}.'.format(self.history_epoch['Gen_Loss'][epoch-1], 
+                                                                                  self.history_epoch['Gen_Acc'][epoch-1])
             print('\nEpoch Completed, ' + str1 + str2)
+            print('\t\t\t________________________________________________________\n')
         else:
             raise ValueError('Invalid value given to `which`, it can be either `batch` or `epoch`!')
     
@@ -365,9 +366,9 @@ class GAN:
                     self.disc_metric = 1000.0
                     self.gen_metric = 1000.0
                 #Checking for improvements
-                if self.history_batch['Disc_Loss'] < self.disc_metric:
+                if self.history_epoch['Disc_Loss'][epoch-1] < self.disc_metric:
                     save_disc(models, path)
-                if self.history_batch['Gen_Loss'] < self.gen_metric:
+                if self.history_epoch['Gen_Loss'][epoch-1] < self.gen_metric:
                     save_gen(models, path)
                     
             elif metric_disc=='accuracy' and metric_gen=='accuracy':
@@ -375,9 +376,9 @@ class GAN:
                     self.disc_metric = 0.0
                     self.gen_metric = 0.0
                 #Checking for improvements
-                if self.history_batch['Disc_Acc'] > self.disc_metric:
+                if self.history_epoch['Disc_Acc'][epoch-1] > self.disc_metric:
                     save_disc(models, path)
-                if self.history_batch['Gen_Acc'] > self.gen_metric:
+                if self.history_epoch['Gen_Acc'][epoch-1] > self.gen_metric:
                     save_gen(models, path)
                     
             elif metric_disc=='loss' and metric_gen=='accuracy':
@@ -385,9 +386,9 @@ class GAN:
                     self.disc_metric = 1000.0
                     self.gen_metric = 0.0
                 #Checking for improvements
-                if self.history_batch['Disc_Loss'] < self.disc_metric:
+                if self.history_epoch['Disc_Loss'][epoch-1] < self.disc_metric:
                     save_disc(models, path)
-                if self.history_batch['Gen_Acc'] < self.gen_metric:
+                if self.history_epoch['Gen_Acc'][epoch-1] < self.gen_metric:
                     save_gen(models, path)
                     
             elif metric_disc=='accuracy' and metric_gen=='loss':
@@ -395,9 +396,9 @@ class GAN:
                     self.disc_metric = 0.0
                     self.gen_metric = 1000.0
                 #Checking for improvements
-                if self.history_batch['Disc_Acc'] < self.disc_metric:
+                if self.history_epoch['Disc_Acc'][epoch-1] < self.disc_metric:
                     save_disc(models, path)
-                if self.history_batch['Gen_Loss'] < self.gen_metric:
+                if self.history_epoch['Gen_Loss'][epoch-1] < self.gen_metric:
                     save_gen(models, path)
         else:
             save_disc(models, path)
@@ -459,12 +460,12 @@ class GAN:
                 self.info_out('batch', epoch, epochs, batch, steps_per_epoch)
                 
             #computing loss & accuracy over one epoch
-            self.history_epoch['Disc_Loss'].append(sum(self.history_batch['Disc_Loss']/steps_per_epoch))
-            self.history_epoch['Disc_Acc'].append(sum(self.history_batch['Disc_Acc']/steps_per_epoch))
-            self.history_epoch['Gen_Loss'].append(sum(self.history_batch['Gen_Loss']/steps_per_epoch))
-            self.history_epoch['Gen_Acc'].append(sum(self.history_batch['Gen_Acc']/steps_per_epoch))
+            self.history_epoch['Disc_Loss'].append(sum(self.history_batch['Disc_Loss'])/steps_per_epoch)
+            self.history_epoch['Disc_Acc'].append(sum(self.history_batch['Disc_Acc'])/steps_per_epoch)
+            self.history_epoch['Gen_Loss'].append(sum(self.history_batch['Gen_Loss'])/steps_per_epoch)
+            self.history_epoch['Gen_Acc'].append(sum(self.history_batch['Gen_Acc'])/steps_per_epoch)
             self.history_epoch['Batch_Data'].append(self.history_batch)
-            self.info_out(which='epoch')
+            self.info_out(which='epoch', epoch=epoch)
             self.ckpt_callback(epoch, [generator, discriminator, gan_model])
 
         return self.history_epoch
