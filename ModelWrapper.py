@@ -23,37 +23,19 @@ class GAN:
     ----------
     n_features : TYPE
         DESCRIPTION.
-    input_shape : TYPE
-        DESCRIPTION.
     optimizer : TYPE
         DESCRIPTION.
+    ckpt_path : TYPE
+        DESCRIPTION.
+    tb_path : TYPE, optional
+        DESCRIPTION. The default is None.
     dropout : TYPE, optional
         DESCRIPTION. The default is 0.2.
-
-    Returns
-    -------
-    None.
-
-    """
-    def __init__(self, n_features, input_shape, optimizer, dropout=0.2, alpha=0.2, gen_loss=None, **kwargs):
-        """
-        
-
-        Parameters
-        ----------
-        n_features : TYPE
-            DESCRIPTION.
-        input_shape : TYPE
-            DESCRIPTION.
-        optimizer : TYPE
-            DESCRIPTION.
-        dropout : TYPE, optional
-            DESCRIPTION. The default is 0.2.
-        alpha : TYPE, optional
-            DESCRIPTION. The default is 0.2.
-        gen_loss : TYPE, optional
-            DESCRIPTION. The default is None.
-        **kwargs : 
+    alpha : TYPE, optional
+        DESCRIPTION. The default is 0.2.
+    gen_loss : TYPE, optional
+        DESCRIPTION. The default is None.
+    **kwargs : 
             label_smoothing: 
                 Label smoothing for discriminator min_max_loss. The amount of smoothing for positive labels. 
                 This technique is taken from `Improved Techniques for Training GANs` 
@@ -63,15 +45,16 @@ class GAN:
                 tf.compat.v1.GraphKeys.LOSSES
             reduction:
                 A `tf.losses.Reduction` to apply to loss. e.g: Reduction.SUM_BY_NONZERO_WEIGHTS
-            
-        Returns
-        -------
-        None.
+    Returns
+    -------
+    None.
 
-        """
+    """
+    def __init__(self, n_features, optimizer, ckpt_path, tb_path=None, dropout=0.2, alpha=0.2, gen_loss=None, **kwargs):
         self.n_features = n_features
-        self.input_shape = input_shape
         self.optimizer = optimizer
+        self.ckpt_path = ckpt_path
+        self.tb_path = tb_path
         self.dropout = dropout
         self.aplha = alpha
         self.gen_loss = gen_loss
@@ -364,7 +347,8 @@ class GAN:
         else:
             raise ValueError('Invalid value given to `which`, it can be either `batch` or `epoch`!')
     
-    def ckpt_callback(self, epoch, models, path, metric_disc='loss', metric_gen='loss', save_best_only=True):
+    def ckpt_callback(self, epoch, models, metric_disc='loss', metric_gen='loss', save_best_only=True):
+        path = self.ckpt_path
         if type(models)!= list:
             raise TypeError('Invalid value given to models it should be a list containing three models in this order: [generator, discriminator, gan_model]')
         os.makedirs(path, exist_ok=True)
@@ -420,8 +404,31 @@ class GAN:
             save_gen(models, path)
         
 
-    def train_GAN(self, X_train, epochs, batch_size, batch_shape, name, gan_summary=False, tb_path='./Tensorboard'):
+    def train_GAN(self, X_train, epochs, batch_size, batch_shape, name, gan_summary=False):
+        """
         
+
+        Parameters
+        ----------
+        X_train : TYPE
+            DESCRIPTION.
+        epochs : TYPE
+            DESCRIPTION.
+        batch_size : TYPE
+            DESCRIPTION.
+        batch_shape : TYPE
+            DESCRIPTION.
+        name : TYPE
+            DESCRIPTION.
+        gan_summary : TYPE, optional
+            DESCRIPTION. The default is False.
+
+        Returns
+        -------
+        TYPE
+            DESCRIPTION.
+
+        """
         generator, discriminator, gan_model = self.get_gan_model(name)
         if gan_summary:
             gan_model.summary()
@@ -441,6 +448,7 @@ class GAN:
                 #Getting the data for discrimnator training.
                 X_disc, Y_disc, X_fake = bg.get_disc_gan_data(generator, X, X_reshaped, x_t1)
                 """ train discriminator """
+                
                 metrics = discriminator.train_on_batch(X_disc, Y_disc)
                 self.history_batch['Disc_Loss'].append(metrics[0])
                 self.history_batch['Disc_Acc'].append(metrics[1])
@@ -457,6 +465,6 @@ class GAN:
             self.history_epoch['Gen_Acc'].append(sum(self.history_batch['Gen_Acc']/steps_per_epoch))
             self.history_epoch['Batch_Data'].append(self.history_batch)
             self.info_out(which='epoch')
-            self.ckpt_callback(epoch, [generator, discriminator, gan_model], path='checkpoints')
+            self.ckpt_callback(epoch, [generator, discriminator, gan_model])
 
-            
+        return self.history_epoch

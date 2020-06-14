@@ -7,6 +7,7 @@ Created on Fri Jun 12 17:52:32 2020
 
 
 import tensorflow as tf
+import numpy as np
 
 class BatchGenerator:
     def __init__(self, X, batch_size):
@@ -25,7 +26,7 @@ class BatchGenerator:
         self.counter += self.batch_size
         return batch, batch_reshaped, batch_t_plus1
     
-    def get_disc_gan_data(generator, X, X_reshaped, x_t1):
+    def get_disc_gan_data(self, generator, X, X_reshaped, x_t1):
         #prediction of generator x_t1_hat given x_t
         x_t1_hat = generator.predict(X_reshaped)
         #we concatenate X={x1....xt} & x_t1_hat to get {x1....xt, x_t1_hat} as fake data X_fake
@@ -39,5 +40,6 @@ class BatchGenerator:
         Y_disc = tf.concat([tf.ones((samples, 1)), tf.zeros((samples, 1))], axis=0, name='Disc_Y_Concat')
         #Reshape the X_fake for the input of GAN as [batch_size, time_step, features]
         X_fake = tf.expand_dims(X_fake, axis=1)
+        print(X_disc.get_shape().as_list(), Y_disc.get_shape().as_list(), X_fake.get_shape().as_list())
         return X_disc, Y_disc, X_fake
     
