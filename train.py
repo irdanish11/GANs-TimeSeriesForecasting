@@ -20,3 +20,6 @@ gan = GAN(n_features=7, optimizer=Adam(), ckpt_path='checkpoints', tb_path='./Te
 
 history = gan.train_GAN(X, epochs=10, batch_size=64, batch_shape=(64, 1, 7), name='GAN',
               gan_summary=True)
+
+
+

@@ -10,6 +10,8 @@ import tensorflow as tf
 from tensorflow.keras.layers import LSTM, Dense, Input, Dropout, BatchNormalization
 from tensorflow.keras.layers import LeakyReLU
 from tensorflow.keras.models import Model
+from tensorflow.keras.utils import plot_model 
+from tensorflow.python.keras import backend as K
 from DataGenerator import BatchGenerator
 from utilities import PrintInline, Timer
 import os
@@ -65,6 +67,7 @@ class GAN:
         #Callback variables
         self.disc_metric=None
         self.gen_metric=None
+        self.writer = None
         #Keyword variables
         self.gen_summary = kwargs.get('gen_summary', False)
         self.disc_summary = kwargs.get('disc_summary', False)
@@ -403,9 +406,20 @@ class GAN:
         else:
             save_disc(models, path)
             save_gen(models, path)
+            
+    def tensorboard_callback(self, graph=None, models=None):
+        os.makedirs(self.tb_path, exist_ok=True)
+        if models != None:
+            if type(models) != list:
+                raise TypeError('Invalid value given to models it should be a list containing three models in this order: [generator, discriminator, gan_model]')
+            else:
+                for i in range(len(models)):
+                    plot_model(models[i], to_file=self.tb_path+'/'+models[i].name+'.png', show_shapes=True, show_layer_names=True)
+        if graph != None:
+            self.writer = tf.summary.FileWriter(logdir=self.tb_path, graph=graph)
         
 
-    def train_GAN(self, X_train, epochs, batch_size, batch_shape, name, gan_summary=False):
+    def train_GAN(self, X_train, epochs, batch_size, batch_shape, name, gan_summary=False, tensorboard=True):
         """
         
 
@@ -431,6 +445,10 @@ class GAN:
 
         """
         generator, discriminator, gan_model = self.get_gan_model(name)
+        if tensorboard:
+            # Get the sessions graph
+            #graph = K.get_session().graphs
+            self.tensorboard_callback(models=[generator, discriminator, gan_model])
         if gan_summary:
             gan_model.summary()
             print('Note: In the GAN(combined model) Discriminator parameters are set to non-trainable because while training Generator, we do not train Discriminator!')
