@@ -22,15 +22,8 @@ for i in div_num_sales:
     if i in div_num_trafic:
         same_div_num.append(i)
         
-#checking the median dwell
-data = {}
-for i in range(len(foot_traffic.div_nbr)):
-    if foot_traffic.div_nbr[i] == 2020:
-        data[weeks[i]] = foot_traffic.median_dwell[i]
-        #data.append(foot_traffic.median_dwell[i])
-        
-        
-def to_weeks(obj, splitter='/', convet=True):       
+           
+def to_weeks(obj, splitter='/', convert=True):       
     if convert:
         for j in range(len(obj)):
             split = obj[j].split(splitter)
@@ -40,9 +33,22 @@ def to_weeks(obj, splitter='/', convet=True):
             obj[j] = ''.join(new)
     obj = pd.to_datetime(obj, format='%m%d%Y')
     return obj.dt.week
-    
+
+weeks = to_weeks(obj=foot_traffic.clndr_dt)
+
+#checking the median dwell
+data = {}
+for i in range(len(foot_traffic.div_nbr)):
+    if foot_traffic.div_nbr[i] == 2020:
+        data[weeks[i]] = foot_traffic.median_dwell[i]
+
 #Adds the column number of weeks by converting date into week number     
-foot_traffic['fisc_yr_wk'] = to_weeks(obj=foot_traffic.clndr_dt)
+foot_traffic['fisc_yr_wk'] = weeks
 
+################# Sales Data & Foot Traffic mapping #################
+new_foot_traffic = foot_traffic.set_index('fisc_yr_wk').sort_index()
+new_sales_df = sales_df.set_index('fisc_yr_wk').sort_index()
+new_sales_df = new_sales_df.fillna(value=0)
 
-
+t_sales = new_sales_df.loc[1]
+t_traffic = new_foot_traffic.loc[1]
