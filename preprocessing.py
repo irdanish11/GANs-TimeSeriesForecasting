@@ -90,7 +90,7 @@ for i in traffic_weeks:
     lst.append(new_sales_df.loc[i])
 sales_df_5_18 = pd.concat(lst)
 #Getting the div_nbr that are present in the data for week 5-18
-div_nb_unq = sales_df_17_18.div_nbr.unique()
+div_nb_unq = sales_df_5_18.div_nbr.unique()
 
 #Extracting data of 19 div_nbr from foot_traffic because sales_data contain data for 
 #only those div_nbr
@@ -98,7 +98,7 @@ lst = []
 for j in div_nb_unq:
     lst.append(new_foot_traffic.loc[j])
 foot_traffic_19_div = pd.concat(lst)    
-
+#foot_traffic_19_div.to_csv(path+'/Data/Processed_Foot_Traffic.csv')
 
 
 
