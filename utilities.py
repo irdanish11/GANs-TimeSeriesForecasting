@@ -8,7 +8,9 @@ Created on Sun Jun 14 11:44:03 2020
 
 import time
 import sys
-import  tensorflow as tf
+import tensorflow as tf
+import pandas as pd
+from tqdm import tqdm
 
 class Timer:
     def __init__(self):
@@ -70,3 +72,14 @@ def TF_GPUsetup(GB=4):
         print(e)
     print('\nTensorflow GPU installed: '+str(tf.test.is_built_with_cuda()))
     print('Is Tensorflow using GPU: '+str(tf.test.is_gpu_available()))
+    
+def to_weeks(obj, format_='%m%d%Y', splitter='/', convert=True, year_index=2):       
+    if convert:
+        for j in tqdm(range(len(obj))):
+            split = obj[j].split(splitter)
+            new = ['0'+i if len(i)<2  else i for i in split]
+            if len(new[year_index])<4:
+                new[year_index] = new[year_index]+'20'
+            obj[j] = ''.join(new)
+        obj = pd.to_datetime(obj, format=format_)
+    return obj.dt.week
