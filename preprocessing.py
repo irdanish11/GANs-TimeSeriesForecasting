@@ -25,7 +25,7 @@ foot_traffic = pd.read_csv(path+'/Customer_Foot_Traffic.csv')
 
 ############ converting dates into weeks of Foot Traffic ############
 foot_traffic_head = foot_traffic.head(20).copy()
-obj = foot_traffic23.clndr_dt.copy()
+obj = foot_traffic.clndr_dt.copy()
 fisc_yr_wk = to_weeks(obj, format_='%Y%m%d', splitter='-', 
                       convert=True, year_index=0)
 foot_traffic['fisc_wk'] = fisc_yr_wk
@@ -89,6 +89,9 @@ lst = []
 for i in traffic_weeks:
     lst.append(new_sales_df.loc[i])
 sales_df_5_18 = pd.concat(lst)
+sales_df_5_18_nan = sales_df_5_18.copy()
+sales_df_5_18 = sales_df_5_18.dropna()
+sales_head = sales_df_5_18.head(50)
 #Getting the div_nbr that are present in the data for week 5-18
 div_nb_unq = sales_df_5_18.div_nbr.unique()
 
@@ -97,9 +100,10 @@ div_nb_unq = sales_df_5_18.div_nbr.unique()
 lst = []
 for j in div_nb_unq:
     lst.append(new_foot_traffic.loc[j])
-foot_traffic_19_div = pd.concat(lst)    
-#foot_traffic_19_div.to_csv(path+'/Data/Processed_Foot_Traffic.csv')
-
+foot_traffic_16_div = pd.concat(lst) 
+foot_traffic_16_div = foot_traffic_16_div.sort_index()   
+foot_traffic_16_div = foot_traffic_16_div.dropna()
+traffic_head = foot_traffic_16_div.head(50)
 
 
 
