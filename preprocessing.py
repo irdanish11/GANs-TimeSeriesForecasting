@@ -8,7 +8,7 @@ Created on Mon Jun 15 12:25:17 2020
 
 import pandas as pd
 from pathlib import Path
-from utilities import to_weeks
+from utilities import to_weeks, series_to_df
 import os
 import numpy as np
 
@@ -144,8 +144,8 @@ for week in weeks_t:
     lst = []
     for d in div_tr:
         if d in div_sa:
-            df_temp_tr = df_traffic.loc[d]
-            df_temp_sa = df_sales.loc[d]
+            df_temp_tr = pd.DataFrame(df_traffic.loc[d])
+            df_temp_sa = pd.DataFrame([df_sales.loc[d]])
             #determine the size which will be used to extract the rows
             if len(df_temp_tr) < len(df_temp_sa):
                 size = len(df_temp_tr)
