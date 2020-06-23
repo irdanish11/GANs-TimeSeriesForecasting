@@ -153,8 +153,8 @@ for week in weeks_t:
                 size = len(df_temp_sa)
             df_temp_tr = df_temp_tr.reset_index()
             df_temp_sa = df_temp_sa.reset_index() 
-            df1_t = df_temp_tr.loc[0:size]
-            df2_s = df_temp_sa[0:size]
+            df1_t = df_temp_tr.loc[0:size].copy()
+            df2_s = df_temp_sa[0:size].copy()
             #Removing extra columns
             #fisc_wk & div_nbr are already present in df2_s, that is why drop here
             df1_t = df1_t.drop(['div_nbr2', 'clndr_dt', 'fisc_wk', 'div_nbr'], axis=1)
@@ -166,7 +166,9 @@ for week in weeks_t:
             lst.append(new_df)
     #concatenating all the dataframes based on the div_nbr for a single week
     week_df = pd.concat(lst)
+    #appending the dataframe which contains the data for 1 week
     df_lst.append(week_df)
+ #concatenating all the dataframes based on the weeks    
 sales_traffic = pd.concat(df_lst)      
 
 weeks = to_weeks(obj=foot_traffic.clndr_dt)
