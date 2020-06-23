@@ -127,11 +127,10 @@ weeks_t == weeks_s
 div_nbrs_t.sort() == div_nbrs_s.sort() 
 
 
-data = ['fisc_wk', 'div_nbr', 'zip_cd', 'prod_nbr', 'cases_shipped', 'sales'
-        'foot_traffic_by_day', 'cust_nbr', 'visits_that_day', 'median_dwell_sales']
+data = ['fisc_wk', 'div_nbr', 'zip_cd', 'prod_nbr', 'cases_shipped', 'sales',
+        'foot_traffic_by_day', 'cust_nbr', 'visits_that_day', 'median_dwell']
 
-sales_traffic = pd.DataFrame([data])
-sales_traffic.append()
+df_lst = []
 for week in weeks_t:
     df_traffic = foot_traffic_16_div.loc[week]
     df_sales = sales_df_6_18.loc[week] 
@@ -142,6 +141,7 @@ for week in weeks_t:
     div_tr = np.sort(df_traffic.div_nbr.unique())
     div_sa = np.sort(df_sales.div_nbr.unique()) 
     #extracting the data of each div_nbr one by one.
+    lst = []
     for d in div_tr:
         if d in div_sa:
             df_temp_tr = df_traffic.loc[d]
@@ -152,8 +152,22 @@ for week in weeks_t:
             else:
                 size = len(df_temp_sa)
             df_temp_tr = df_temp_tr.reset_index()
-            df_temp_sa = df_temp_sa.reset_index()    
-      
+            df_temp_sa = df_temp_sa.reset_index() 
+            df1_t = df_temp_tr.loc[0:size]
+            df2_s = df_temp_sa[0:size]
+            #Removing extra columns
+            #fisc_wk & div_nbr are already present in df2_s, that is why drop here
+            df1_t = df1_t.drop(['div_nbr2', 'clndr_dt', 'fisc_wk', 'div_nbr'], axis=1)
+            df2_s = df2_s.drop(['div_nbr2', 'prod_desc', 'smplfd_menu_desc',
+                                'cases_ordered'], axis=1)
+            new_df = pd.concat([ df1_t,  df2_s], axis=1)
+            new_df = new_df[data]
+            new_df = new_df.dropna()
+            lst.append(new_df)
+    #concatenating all the dataframes based on the div_nbr for a single week
+    week_df = pd.concat(lst)
+    df_lst.append(week_df)
+sales_traffic = pd.concat(df_lst)      
 
 weeks = to_weeks(obj=foot_traffic.clndr_dt)
 
