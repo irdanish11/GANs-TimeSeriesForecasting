@@ -130,16 +130,30 @@ div_nbrs_t.sort() == div_nbrs_s.sort()
 data = ['fisc_wk', 'div_nbr', 'zip_cd', 'prod_nbr', 'cases_shipped', 'sales'
         'foot_traffic_by_day', 'cust_nbr', 'visits_that_day', 'median_dwell_sales']
 
-sales_traffic = pd.DataFrame([data_s])
+sales_traffic = pd.DataFrame([data])
 sales_traffic.append()
 for week in weeks_t:
     df_traffic = foot_traffic_16_div.loc[week]
     df_sales = sales_df_6_18.loc[week] 
     #Setting the div_nbr as index
-    df_traffic = df_traffic.set_index('div_nbr2').sort()
-    df_sales = df_sales.set_index('div_nbr2').sort()  
-    div_tr = df_traffic.unique()
-           
+    df_traffic = df_traffic.set_index('div_nbr2').sort_index()
+    df_sales = df_sales.set_index('div_nbr2').sort_index()  
+    #Getting the divison numbers present in respective  2 df
+    div_tr = np.sort(df_traffic.div_nbr.unique())
+    div_sa = np.sort(df_sales.div_nbr.unique()) 
+    #extracting the data of each div_nbr one by one.
+    for d in div_tr:
+        if d in div_sa:
+            df_temp_tr = df_traffic.loc[d]
+            df_temp_sa = df_sales.loc[d]
+            #determine the size which will be used to extract the rows
+            if len(df_temp_tr) < len(df_temp_sa):
+                size = len(df_temp_tr)
+            else:
+                size = len(df_temp_sa)
+            df_temp_tr = df_temp_tr.reset_index()
+            df_temp_sa = df_temp_sa.reset_index()    
+      
 
 weeks = to_weeks(obj=foot_traffic.clndr_dt)
 
