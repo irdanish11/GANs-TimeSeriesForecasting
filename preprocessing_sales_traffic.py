@@ -7,15 +7,12 @@ Created on Mon Jun 15 12:25:17 2020
 
 
 import pandas as pd
-from pathlib import Path
-from utilities import to_weeks, series_to_df
+from utilities import to_weeks, extract_sub_df
 import os
 import numpy as np
 
 path = r'C:\Users\danis\Documents\USFoods'
 
-#covid_df = pd.read_csv(path+'/COVIDData.csv')
-#mobility_df = pd.read_csv(path+'/Mobility_eth.csv')
 sales_df1 = pd.read_csv(path+'/SalesData1.csv')
 sales_df2 = pd.read_csv(path+'/SalesData2.csv')
 sales_df3 = pd.read_csv(path+'/SalesData3.csv')
@@ -144,8 +141,8 @@ for week in weeks_t:
     lst = []
     for d in div_tr:
         if d in div_sa:
-            df_temp_tr = pd.DataFrame(df_traffic.loc[d])
-            df_temp_sa = pd.DataFrame([df_sales.loc[d]])
+            df_temp_tr = extract_sub_df(df_traffic, d)
+            df_temp_sa = extract_sub_df(df_sales, d)
             #determine the size which will be used to extract the rows
             if len(df_temp_tr) < len(df_temp_sa):
                 size = len(df_temp_tr)
@@ -170,26 +167,6 @@ for week in weeks_t:
     df_lst.append(week_df)
  #concatenating all the dataframes based on the weeks    
 sales_traffic = pd.concat(df_lst)      
-
-weeks = to_weeks(obj=foot_traffic.clndr_dt)
-
-#checking the median dwell
-data = {}
-
-for i in range(len(foot_traffic.div_nbr)):
-    if foot_traffic.div_nbr[i] == 2020:
-        data[weeks[i]] = foot_traffic.median_dwell[i]
-
-#Adds the column number of weeks by converting date into week number     
-foot_traffic['fisc_yr_wk'] = weeks
-
-################# Sales Data & Foot Traffic mapping #################
-new_foot_traffic = foot_traffic.set_index('fisc_yr_wk').sort_index()
-new_sales_df = sales_df.set_index('fisc_yr_wk').sort_index()
-new_sales_df = new_sales_df.fillna(value=0)
-
-t_sales = new_sales_df.loc[1]
-t_traffic = new_foot_traffic.loc[1]
-
-
-
+#Writing to csv file
+os.makedirs(path+'/Data', exist_ok=True)
+sales_traffic.to_csv(path+'/Data/Sales_Traffic_Mapping.csv')

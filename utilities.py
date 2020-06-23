@@ -84,8 +84,8 @@ def to_weeks(obj, format_='%m%d%Y', splitter='/', convert=True, year_index=2):
         obj = pd.to_datetime(obj, format=format_)
     return obj.dt.week
 
-def series_to_df(df):
-    if type(df) == type(pd.Series([1])):
-        return pd.DataFrame([df])
+def extract_sub_df(df, d):
+    if type(df.loc[d]) == type(pd.Series([1])):
+        return df.loc[[d]]
     else:
-        return df
+        return df.loc[d]
