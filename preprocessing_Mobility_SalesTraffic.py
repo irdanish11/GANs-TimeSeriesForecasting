@@ -16,4 +16,3 @@ path = r'C:\Users\danis\Documents\USFoods'
 
 mobility_df = pd.read_csv(path+'/Mobility_eth.csv', quoting=csv.QUOTE_NONE, error_bad_lines=False)
 
-head_mo

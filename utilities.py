@@ -73,7 +73,29 @@ def TF_GPUsetup(GB=4):
     print('\nTensorflow GPU installed: '+str(tf.test.is_built_with_cuda()))
     print('Is Tensorflow using GPU: '+str(tf.test.is_gpu_available()))
     
-def to_weeks(obj, format_='%m%d%Y', splitter='/', convert=True, year_index=2):       
+def to_weeks(obj, format_='%m%d%Y', splitter='/', convert=True, year_index=2):   
+    """
+    
+
+    Parameters
+    ----------
+    obj : TYPE
+        DESCRIPTION.
+    format_ : TYPE, optional
+        DESCRIPTION. The default is '%m%d%Y'.
+    splitter : TYPE, optional
+        DESCRIPTION. The default is '/'.
+    convert : TYPE, optional
+        DESCRIPTION. The default is True.
+    year_index : TYPE, optional
+        DESCRIPTION. The default is 2.
+
+    Returns
+    -------
+    TYPE
+        DESCRIPTION.
+
+    """    
     if convert:
         for j in tqdm(range(len(obj))):
             split = obj[j].split(splitter)
