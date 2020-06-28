@@ -9,7 +9,8 @@ Created on Fri Jun 26 18:41:53 2020
 import pandas as pd
 import glob
 import os
-from utilities import to_weeks
+from utilities import to_weeks, extract_sub_df
+import numpy as np
 
 path = r'C:\Users\danis\Documents\USFoods'
 csv_files = os.listdir(path+'/COVID')
@@ -51,13 +52,31 @@ fips_lst = []
 for f in fips:
     if f in stcountyfp:
         fips_lst.append(f)
+        
 #creating a mapping of zip codes and fips
-fips_zips = {}
-for idx in range(len((zip_df))):
-    fip = zip_df['stcountyfp'][idx]
-    if fip in fips_lst:
-        if fip not in fips_zips:
-            fips_zips[fip] = zip_df['zip'][idx]
+zip_df_tmp = zip_df.copy()
+zip_df_tmp = zip_df_tmp.set_index('stcountyfp').sort_index()
+fips_2_zips = {}
+for f in fips_lst:
+    df = extract_sub_df(zip_df_tmp, f)
+    fips_2_zips[f] = df.zip.unique()
+
+covid_df = covid_df.reset_index()
+zip_cd = []                
+for row in range(len(covid_df)):
+    fip = covid_df['fips'][row]       
+    zip_codes = fips_2_zips[fip]
+    #getting the index to choose the zip code randomly
+    idx = np.random.randint(0, len(zip_codes), size=1)[0]
+    zip_cd.append(zip_codes[idx])
+covid_df['zip_cd'] = zip_cd
+#deleting unecessary columns
+try:
+    covid_df = covid_df.drop(['level_0', 'index'], axis=1)
+except Exception as e:
+    print('Requested Columns not found in the df')
+covid_df['zip_cd2'] = covid_df['zip_cd']
+covid_df['fisc_wk2'] = covid_df['fisc_wk']
 covid_df.to_csv(path+'/Data/Processed_COVID.csv')
 
 
