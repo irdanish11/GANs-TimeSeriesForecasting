@@ -5,14 +5,17 @@ Created on Sun Jun 28 16:59:59 2020
 @author: Danish
 """
 
-#2689
 import pandas as pd
 import numpy as np
 from utilities import extract_sub_df
+import pickle
+from tqdm import tqdm
 
 path = r'C:\Users\danis\Documents\USFoods'
 df_covid = pd.read_csv(path+'/Data/Processed_COVID.csv')
 df_sales_tr = pd.read_csv(path+'/Data/Sales_Traffic_Mapping.csv')
+with open(path+'/Data/fips2zips', 'rb') as f:
+    fips_2_zips = pickle.load(f)
 
 #checking for how many weeks we have the data
 weeks_covid = np.sort(df_covid.fisc_wk.unique())
@@ -44,12 +47,29 @@ df_sales_Ncovid = df_sales_Ncovid.drop(['fisc_wk2'], axis=1)
 df_sales_tr['zip_cd2'] = df_sales_tr['zip_cd']
 df_covid = df_covid.set_index('fisc_wk2').sort_index()
 lst = []
+lst_chng = []
 df_weeks = []
-for w in weeks_cmn:
+dfs = []
+for w in tqdm(weeks_cmn):
     df_st = extract_sub_df(df_sales_tr, w)
     df_cov = extract_sub_df(df_covid, w)
     #getting zip codes from both dataframes
     zips_st = np.sort(df_st.zip_cd.unique())
+    
+    #Mapping the zip codes accordingly
+    changed = []
+    df_cov = df_cov.reset_index()
+    for row in range(len(df_cov)):
+        fip = df_cov['fips'][row]
+        for zip_ in fips_2_zips[fip]:
+            if zip_ in zips_st:
+                df_cov['zip_cd'][row] = zip_
+                df_cov['zip_cd2'][row] = zip_
+                changed.append(row)
+    lst_chng.append(changed) 
+    df_cov.set_index('fisc_wk2')   
+    
+    #getting zip codes from both dataframes
     zips_cov = np.sort(df_cov.zip_cd.unique())
     #getting common zip code
     """ Here is breakpoint we have very few number of common zip codes among 
@@ -80,6 +100,7 @@ for w in weeks_cmn:
         df_weeks.append(pd.concat(df_zip))
     except Exception as e:
         print('No Coinciding data found at zip level')
+        
 df_mapped = pd.concat(df_weeks)
 df_mapped = df_mapped.reset_index(drop=True)
 
