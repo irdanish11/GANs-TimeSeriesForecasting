@@ -7,15 +7,15 @@ Created on Fri Jun 26 18:41:53 2020
 
 
 import pandas as pd
-import glob
 import os
 from utilities import to_weeks, extract_sub_df
 import numpy as np
+import pickle
 
 path = r'C:\Users\danis\Documents\USFoods'
 csv_files = os.listdir(path+'/COVID')
 #removes the first file which is non csv
-#csv_files.pop(0)
+csv_files.pop(0)
 
 #reading all the csv files
 covid_df = []
@@ -42,8 +42,12 @@ covid_df1['fisc_wk'] = weeks1
 ############################ Adding zip codes ############################
 #concatenated DF
 covid_df = pd.concat([covid_df, covid_df1])
+covid_df = covid_df.reset_index(drop=True)
+
+county = covid_df.county.unique()
 
 zip_df = pd.read_csv(path+'/zip_to_county.csv')
+county_name = zip_df.countyname.unique()
 
 stcountyfp = zip_df.stcountyfp.unique()
 fips = covid_df.fips.unique()
@@ -56,12 +60,17 @@ for f in fips:
 #creating a mapping of zip codes and fips
 zip_df_tmp = zip_df.copy()
 zip_df_tmp = zip_df_tmp.set_index('stcountyfp').sort_index()
+
 fips_2_zips = {}
 for f in fips_lst:
     df = extract_sub_df(zip_df_tmp, f)
     fips_2_zips[f] = df.zip.unique()
+with open(path+'/Data/fips2zips', 'wb') as f:
+    pickle.dump(fips_2_zips, f)
 
-covid_df = covid_df.reset_index()
+
+covid_df = covid_df.reset_index(drop=True)
+#adding zip codes
 zip_cd = []                
 for row in range(len(covid_df)):
     fip = covid_df['fips'][row]       
@@ -72,7 +81,7 @@ for row in range(len(covid_df)):
 covid_df['zip_cd'] = zip_cd
 #deleting unecessary columns
 try:
-    covid_df = covid_df.drop(['level_0', 'index'], axis=1)
+    covid_df = covid_df.drop(['index'], axis=1)
 except Exception as e:
     print('Requested Columns not found in the df')
 covid_df['zip_cd2'] = covid_df['zip_cd']
