@@ -73,7 +73,7 @@ def TF_GPUsetup(GB=4):
     print('\nTensorflow GPU installed: '+str(tf.test.is_built_with_cuda()))
     print('Is Tensorflow using GPU: '+str(tf.test.is_gpu_available()))
     
-def to_weeks(obj, format_='%m%d%Y', splitter='/', convert=True, year_index=2):   
+def to_weeks(obj, format_='%m%d%Y', splitter='/', convert=True, year_index=2, keep=None):   
     """
     
 
@@ -89,16 +89,22 @@ def to_weeks(obj, format_='%m%d%Y', splitter='/', convert=True, year_index=2):
         DESCRIPTION. The default is True.
     year_index : TYPE, optional
         DESCRIPTION. The default is 2.
+    keep : TYPE, optional
+        If you want to keep the certain amount of chracters in the given string and remove
+        rest of them, then specify the amount of chracters you want to keep. The default is None.
 
     Returns
     -------
     TYPE
         DESCRIPTION.
 
-    """    
+    """
     if convert:
         for j in tqdm(range(len(obj))):
-            split = obj[j].split(splitter)
+            if keep:
+                split = obj[j][0:keep].split(splitter)
+            else:
+                split = obj[j].split(splitter)
             new = ['0'+i if len(i)<2  else i for i in split]
             if len(new[year_index])<4:
                 new[year_index] = new[year_index]+'20'

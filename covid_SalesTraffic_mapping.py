@@ -14,6 +14,15 @@ from tqdm import tqdm
 path = r'C:\Users\danis\Documents\USFoods'
 df_covid = pd.read_csv(path+'/Data/Processed_COVID.csv')
 df_sales_tr = pd.read_csv(path+'/Data/Sales_Traffic_Mapping.csv')
+
+
+################# Getting the Zip codes #################
+zip_df = pd.read_csv(path+'/zip_to_county.csv')
+zip_covid = zip_df.zip.unique()
+zip_sales = df_sales_tr.zip_cd.unique()
+zip_cmn = np.intersect1d(zip_covid, zip_sales)
+
+
 with open(path+'/Data/fips2zips', 'rb') as f:
     fips_2_zips = pickle.load(f)
 
