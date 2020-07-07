@@ -117,6 +117,7 @@ df_mapped = df_mapped.reset_index(drop=True)
 ################# Concatenating final df #################
 df_final = pd.concat([df_sales_Ncovid, df_mapped])
 df_final = df_final.reset_index(drop=True)
-
+#write to csv
+df_final.to_csv(path+'/Data/Sales_Traffic_Covid_Mapping.csv')
 
 
