@@ -169,4 +169,4 @@ for week in weeks_t:
 sales_traffic = pd.concat(df_lst)      
 #Writing to csv file
 os.makedirs(path+'/Data', exist_ok=True)
-sales_traffic.to_csv(path+'/Data/Sales_Traffic_Mapping.csv')
+sales_traffic.to_csv(path+'/Data/Sales_Traffic_Mapping.csv', index=False)
