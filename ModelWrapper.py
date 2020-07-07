@@ -16,7 +16,6 @@ from DataGenerator import BatchGenerator
 from utilities import PrintInline, Timer
 import os
 
-input_shape = (1,7)
 
 class GAN:
     """
@@ -60,6 +59,7 @@ class GAN:
         self.dropout = dropout
         self.aplha = alpha
         self.gen_loss = gen_loss
+        self.input_shape = None
         self.history_epoch = {'Disc_Loss':[], 'Disc_Acc':[], 'Gen_Loss':[], 'Gen_Acc':[], 'Batch_Data':[]}
         self.history_batch = {'Disc_Loss':[], 'Disc_Acc':[], 'Gen_Loss':[], 'Gen_Acc':[], 'Batch_Data':[]}
         self.time_remain = 0
@@ -241,9 +241,9 @@ class GAN:
 
         """
         with tf.name_scope('Generator'):
-            gen_input = Input(input_shape)
+            gen_input = Input(self.input_shape)
             #LSTM layer
-            lstm = LSTM(units=50, activation='relu', return_sequences=False, input_shape=input_shape)(gen_input)
+            lstm = LSTM(units=50, activation='relu', return_sequences=False, input_shape=self.input_shape)(gen_input)
             lstm = Dropout(self.dropout)(lstm)
             #Fully connected layer
             fc = Dense(units=self.n_features)(lstm)
@@ -300,7 +300,7 @@ class GAN:
         discriminator.trainable = False
         
         #Combine the two models to create the GAN
-        gan_input = Input(shape=input_shape)
+        gan_input = Input(shape=self.input_shape)
         fake_data = generator(gan_input)
         gan_output = discriminator(fake_data)
         
@@ -444,6 +444,7 @@ class GAN:
             DESCRIPTION.
 
         """
+        self.input_shape = (batch_shape[1], batch_shape[2])
         generator, discriminator, gan_model = self.get_gan_model(name)
         if tensorboard:
             # Get the sessions graph
